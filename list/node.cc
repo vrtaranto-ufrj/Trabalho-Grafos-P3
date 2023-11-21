@@ -1,6 +1,6 @@
 #include "node.hh"
 
-Node::Node( int _key, int _capacity, int _flux ) {
+Node::Node( int _key, int _capacity, int _flux, bool _original ) {
     // Inicializa o nó com a chave passada como argumento
     // Argumentos:
     //     _key: chave do nó a ser inicializado
@@ -8,6 +8,7 @@ Node::Node( int _key, int _capacity, int _flux ) {
     capacity = _capacity;
     key = _key;
     flux = _flux;
+    original = _original;
 }
 
 int Node::getCapacity() {
@@ -16,6 +17,14 @@ int Node::getCapacity() {
     //     capacity: capacidade da aresta
 
     return capacity;
+}
+
+bool Node::isOriginal() {
+    // Método para retornar se o nó é original
+    // Retorno:
+    //     original: se o nó é original
+
+    return original;
 }
 
 void Node::setCapacity( int _capacity ) {
@@ -32,6 +41,14 @@ int Node::getFlux() {
     //     flux: fluxo da aresta
 
     return flux;
+}
+
+void Node::setFlux( int _flux ) {
+    // Método para setar o fluxo da aresta
+    // Argumentos:
+    //     _flux: fluxo da aresta
+
+    flux = _flux;
 }
 
 void Node::setNext( Node* _next ){

@@ -19,13 +19,13 @@ List::~List() {
 
 }
 
-void List::insertNode( int key, int capacity, int flux ) {
+void List::insertNode( int key, int capacity, int flux, bool original ) {
     // Método para inserir um nó na lista
     // Argumentos:
     //     key: chave do nó a ser inserido
     //     weight: peso da aresta
 
-    Node* no = new Node( key, capacity, flux );
+    Node* no = new Node( key, capacity, flux, original );
     no->setNext( head );
     head = no;
 }

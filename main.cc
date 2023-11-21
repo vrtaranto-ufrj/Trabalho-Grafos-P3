@@ -21,11 +21,11 @@ int main( int argc, char *argv[] ) {
     string arquivo = "grafo_rf_", extensao = ".txt";
 
 
-    cout << "Carregando grafo : " << 1 << endl;
-    grafo->loadListWeight( arquivo + to_string( 0 ) + extensao, true );
+    cout << "Carregando grafo : " << argv[1] << endl;
+    grafo->loadListWeight( arquivo + argv[1] + extensao, true );
 
     //cout << grafo->ford_fulkerson( 0, grafo->getNumVertices() - 1 ) << endl;
-    cout << grafo->ford_fulkerson( 2, 3 ) << endl;
+    cout << grafo->ford_fulkerson( 0, 1 ) << endl;
 
     delete grafo;
 

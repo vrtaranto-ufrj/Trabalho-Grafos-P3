@@ -24,6 +24,15 @@
 
 using namespace std;
 
+struct residual_graph {
+    residual_graph( int _num_vertices ) : adjacency_list( _num_vertices ){
+        for ( int i = 0; i < _num_vertices; i++ ) {
+            adjacency_list[i] = new List();
+        }
+    };
+    vector<List*> adjacency_list;
+};
+
 class Graph {
     public:
         Graph();
@@ -80,15 +89,12 @@ class Graph {
         int bfs_list_parallel( int root );
 
         void write_tree( vector<vector<int>>&tree_information, int root, string _fs );
+
+        int augment( int source, int sink, vector<int>& parent, residual_graph& residual );
+        int bottleneck( int source, int sink, vector<int>& parent, residual_graph& residual );
+        vector<int> getPath( int source, int sink, residual_graph& residual );
 };
 
-struct residual_graph {
-    residual_graph( int _num_vertices ) : adjacency_list( _num_vertices ){
-        for ( int i = 0; i < _num_vertices; i++ ) {
-            adjacency_list[i] = new List();
-        }
-    };
-    vector<List*> adjacency_list;
-};
+
 
 #endif

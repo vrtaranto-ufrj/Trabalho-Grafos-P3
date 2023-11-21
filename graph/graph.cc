@@ -152,108 +152,130 @@ void Graph::loadListWeight( string file, bool directed ) {
     num_vertices = _size;
 }
 
-int Graph::ford_fulkerson( int source, int sink ) {
-    residual_graph residual( num_vertices );
+int Graph::bottleneck( int source, int sink, vector<int>& parent, residual_graph& residual ) {
+    int gargalo = 1e9;
+    int current_vertex = sink;
     Node* current_edge;
-    for ( int i = 0; i < num_vertices; i++ ) {
-        current_edge = adjacency_list[i]->getHead();
-        while ( current_edge != nullptr ) {
-            residual.adjacency_list[i]->insertNode( current_edge->getKey(), current_edge->getCapacity() );
-            residual.adjacency_list[current_edge->getKey()]->insertNode( i, 0 );
+    while ( current_vertex != source ) {
+        current_edge = residual.adjacency_list[parent[current_vertex]]->getHead();
+        while ( current_edge->getKey() != current_vertex ) {
             current_edge = current_edge->getNext();
         }
+        if ( current_edge->getCapacity() < gargalo )
+            gargalo = current_edge->getCapacity();
+        current_vertex = parent[current_vertex];
     }
+    return gargalo;
+}
 
-    for (int i = 0; i < num_vertices; i++) {
-        Node* current_edge = residual.adjacency_list[i]->getHead();
-        cout << "Vertex " << i + 1 << ": ";
-        while (current_edge != nullptr) {
-            cout << "(" << current_edge->getKey() + 1 << ", " << current_edge->getCapacity() << ") ";
-            current_edge = current_edge->getNext();
-        }
-        cout << endl;
-    }
-    cout << endl;
-
-    for (int i = 0; i < num_vertices; i++) {
-        Node* current_edge = adjacency_list[i]->getHead();
-        cout << "Vertex " << i + 1 << ": ";
-        while (current_edge != nullptr) {
-            cout << "(" << current_edge->getKey() + 1 << ", " << current_edge->getCapacity() << ") ";
-            current_edge = current_edge->getNext();
-        }
-        cout << endl;
-    }
-
-    
-
-    int fluxo = 0;
-    int current_vertex, neighbor, min;
+vector<int> Graph::getPath( int source, int sink, residual_graph& residual ) {
     vector<int> parent( num_vertices, -1 );
     vector<bool> visited( num_vertices, false );
     queue<int> known;
-    Node* current_edge_residual;
-    vector<int> caminho;
-    while ( true ) {
-        known.push( source );
-        visited[source] = true;
-        while ( !known.empty() ) {
-            current_vertex = known.front();
-            known.pop();
-            if ( current_vertex == sink ) {
-                caminho.clear();
-                current_vertex = sink;
-                while ( current_vertex != source ) {
-                    caminho.push_back( current_vertex );
-                    current_vertex = parent[current_vertex];
-                }
-                caminho.push_back( current_vertex );
-                min = 1e9;
-                for ( int i = caminho.size() - 1; i > 0; i-- ) {
-                    current_edge_residual = residual.adjacency_list[caminho[i]]->getHead();
-                    while ( current_edge_residual->getKey() != caminho[i - 1] ) {
-                        current_edge_residual = current_edge_residual->getNext();
-                    }
-                    if ( current_edge_residual->getCapacity() < min )
-                        min = current_edge_residual->getCapacity();
-                }
-                for ( int i = caminho.size() - 1; i > 0; i-- ) {
-                    current_edge_residual = residual.adjacency_list[caminho[i]]->getHead();
-                    while ( current_edge_residual->getKey() != caminho[i - 1] ) {
-                        current_edge_residual = current_edge_residual->getNext();
-                    }
-                    current_edge_residual->setCapacity( current_edge_residual->getCapacity() - min );
-                    current_edge_residual = residual.adjacency_list[caminho[i - 1]]->getHead();
-                    while ( current_edge_residual->getKey() != caminho[i] ) {
-                        current_edge_residual = current_edge_residual->getNext();
-                    }
-                    current_edge_residual->setCapacity( current_edge_residual->getCapacity() + min );
-                }
-                fluxo += min;
-                for ( int i = 0; i < num_vertices; i++ ) {
-                    visited[i] = false;
-                    parent[i] = -1;
-                }
-                while ( !known.empty() )
-                    known.pop();
-                known.push( source );
-                visited[source] = true;
+    int current_vertex, neighbor;
+    Node* current_edge;
+    known.push( source );
+    visited[source] = true;
+    while ( !known.empty() ) {
+        current_vertex = known.front();
+        known.pop();
+        if ( current_vertex == sink )
+            break;
+        current_edge = residual.adjacency_list[current_vertex]->getHead();
+        while ( current_edge != nullptr ) {
+            neighbor = current_edge->getKey();
+            if ( !visited[neighbor] && current_edge->getCapacity() > 0 ) {
+                known.push( neighbor );
+                visited[neighbor] = true;
+                parent[neighbor] = current_vertex;
             }
-            current_edge_residual = residual.adjacency_list[current_vertex]->getHead();
-            while ( current_edge_residual != nullptr ) {
-                neighbor = current_edge_residual->getKey();
-                if ( !visited[neighbor] && current_edge_residual->getCapacity() > 0 ) {
-                    known.push( neighbor );
-                    visited[neighbor] = true;
-                    parent[neighbor] = current_vertex;
+            current_edge = current_edge->getNext();
+        }
+    }
+    return parent;
+}
+
+int Graph::augment( int source, int sink, vector<int>& parent, residual_graph& residual ) {
+    int gargalo = bottleneck( source, sink, parent, residual );
+
+    int current_vertex = sink, fluxo = 0;
+    Node* current_edge;
+    while ( current_vertex != source ) {
+        current_edge = residual.adjacency_list[parent[current_vertex]]->getHead();
+        while ( current_edge->getKey() != current_vertex ) {
+            current_edge = current_edge->getNext();
+        }
+        if ( current_edge->isOriginal() ) {
+            current_edge = adjacency_list[parent[current_vertex]]->getHead();
+            while ( current_edge->getKey() != current_vertex ) {
+                current_edge = current_edge->getNext();
+            }
+            current_edge->setFlux( current_edge->getFlux() + gargalo );
+        }
+        else {
+            current_edge = adjacency_list[current_vertex]->getHead();
+            while ( current_edge->getKey() != parent[current_vertex] ) {
+                current_edge = current_edge->getNext();
+            }
+            current_edge->setCapacity( current_edge->getFlux() - gargalo );
+        }
+        current_vertex = parent[current_vertex];
+    }
+
+    current_edge = adjacency_list[source]->getHead();
+    while ( current_edge != nullptr && current_edge->getKey() != sink ) {
+        fluxo += current_edge->getFlux();
+        current_edge = current_edge->getNext();
+    }
+    return fluxo;
+
+}
+
+int Graph::ford_fulkerson( int source, int sink ) {
+    residual_graph residual( num_vertices );
+    Node* current_edge, *current_edge_r;
+    int fluxo = 0;
+    for ( int i = 0; i < num_vertices; i++ ) {
+        current_edge = adjacency_list[i]->getHead();
+        while ( current_edge != nullptr ) {
+            residual.adjacency_list[i]->insertNode( current_edge->getKey(), current_edge->getCapacity(), 0, true );
+            residual.adjacency_list[current_edge->getKey()]->insertNode( i, 0, 0, false );
+            current_edge = current_edge->getNext();
+        }
+    }
+
+    while ( true ) {
+        vector<int>parents = getPath( source, sink, residual );
+        if ( parents[sink] == -1 )
+            break;
+        fluxo = augment( source, sink, parents, residual );
+        
+
+        for ( int current_vertex = 0; current_vertex < num_vertices; current_vertex++ ) {
+            current_edge_r = residual.adjacency_list[current_vertex]->getHead();
+            while ( current_edge_r != nullptr ) {
+                if ( current_edge_r->isOriginal() ) {
+                    current_edge = adjacency_list[current_vertex]->getHead();
+                    while ( current_edge->getKey() != current_edge_r->getKey() ) {
+                        current_edge = current_edge->getNext();
+                    }
+                    current_edge_r->setCapacity( current_edge->getCapacity() - current_edge->getFlux() );
+                    current_edge_r = current_edge_r->getNext();
                 }
-                current_edge_residual = current_edge_residual->getNext();
+                else {
+                    
+                    current_edge = adjacency_list[current_edge_r->getKey()]->getHead();
+                    while ( current_edge->getKey() != current_vertex ) {
+                        current_edge = current_edge->getNext();
+                    }
+                    current_edge_r->setCapacity( current_edge->getFlux() );
+                    current_edge_r = current_edge_r->getNext();
+                }
             }
         }
-        if ( !visited[sink] )
-            break;
-        
+
     }
+    cout << endl;
     return fluxo;
 }
 
