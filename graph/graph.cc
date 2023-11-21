@@ -152,130 +152,245 @@ void Graph::loadListWeight( string file, bool directed ) {
     num_vertices = _size;
 }
 
+void Graph::loadDictionary( string file) {
+    // Método para carregar um grafo a partir de um arquivo de texto no formato dicionario de adjacência
+    // Argumentos:
+    //     file: string com o nome do arquivo a ser carregado
+    // Retorno:
+    //     void
+
+
+    if (loaded)
+        clearGraphRepresentation();
+
+    type_representation = 'D';
+
+    ifstream inputFile(file);
+
+    if (!inputFile.is_open()) {
+        exit(FILE_COULD_NOT_OPEN);
+    }
+
+    string line, value;
+
+    getline(inputFile, line);
+    int _size = stoi(line);
+
+    dictionary.resize(_size);
+
+    for (int i = 0; i < _size; i++) {
+        dictionary[i] = new unordered_map<int, Edge>;
+    }
+
+    int numPalavras;
+    int edge[2];
+    float peso;
+    Edge aresta;
+
+    // Agora, vamos ler até o fim do arquivo.
+    while (getline(inputFile, line)) {
+        value = "";
+        numPalavras = 0;
+
+        for (unsigned long c = 0; c < line.size(); c++) {
+            if ( c == line.size() - 1 ) {
+                value += line[c];
+                peso = stof(value);
+                if (peso < 0) {
+                    cout << "Grafo possui peso negativo: " << peso << endl;
+                    exit(NEGATIVE_WEIGHT);
+                }
+                value = "";
+                numPalavras++;
+            }
+            if (line[c] != ' ') {
+                value += line[c];
+            }
+            else {
+                if (numPalavras == 0) {
+                    edge[0] = stoi(value) - 1;
+                    value = "";
+                    numPalavras++;
+                }
+                else if (numPalavras == 1) {
+                    edge[1] = stoi(value) - 1;
+                    value = "";
+                    numPalavras++;
+                }
+            }
+        }
+        aresta.vertex = edge[1];
+        aresta.capacity = peso;
+        aresta.flux = 0;
+
+        dictionary[edge[0]]->insert( {edge[1], aresta} );
+    }
+
+    inputFile.close();
+    loaded = true;
+    num_vertices = _size;
+}
+
 int Graph::bottleneck( int source, int sink, vector<int>& parent, residual_graph& residual ) {
     int gargalo = 1e9;
     int current_vertex = sink;
-    Node* current_edge;
+    Edge_residual current_edge;
     while ( current_vertex != source ) {
-        current_edge = residual.adjacency_list[parent[current_vertex]]->getHead();
-        while ( current_edge->getKey() != current_vertex ) {
-            current_edge = current_edge->getNext();
-        }
-        if ( current_edge->getCapacity() < gargalo )
-            gargalo = current_edge->getCapacity();
+        current_edge = residual.dictionary[parent[current_vertex]]->find( current_vertex )->second;
+        if ( current_edge.capacity < gargalo )
+            gargalo = current_edge.capacity;
         current_vertex = parent[current_vertex];
     }
     return gargalo;
 }
 
-vector<int> Graph::getPath( int source, int sink, residual_graph& residual ) {
-    vector<int> parent( num_vertices, -1 );
-    vector<bool> visited( num_vertices, false );
+vector<int> Graph::getPathWithDelta(int source, int sink, residual_graph& residual, int delta) {
+    vector<int> parent(num_vertices, -1);
+    vector<bool> visited(num_vertices, false);
     queue<int> known;
     int current_vertex, neighbor;
-    Node* current_edge;
-    known.push( source );
+    Edge_residual current_edge;
+
+    known.push(source);
     visited[source] = true;
-    while ( !known.empty() ) {
+
+    while (!known.empty()) {
         current_vertex = known.front();
         known.pop();
-        if ( current_vertex == sink )
+
+        if (current_vertex == sink)
             break;
-        current_edge = residual.adjacency_list[current_vertex]->getHead();
-        while ( current_edge != nullptr ) {
-            neighbor = current_edge->getKey();
-            if ( !visited[neighbor] && current_edge->getCapacity() > 0 ) {
-                known.push( neighbor );
+
+        for (auto it = residual.dictionary[current_vertex]->begin(); it != residual.dictionary[current_vertex]->end(); ++it) {
+            neighbor = it->first;
+            current_edge = it->second;
+            // Verifica se a capacidade é maior ou igual a delta e se o vizinho ainda não foi visitado
+            if (!visited[neighbor] && current_edge.capacity >= delta) {
+                known.push(neighbor);
                 visited[neighbor] = true;
                 parent[neighbor] = current_vertex;
             }
-            current_edge = current_edge->getNext();
         }
     }
     return parent;
 }
 
-int Graph::augment( int source, int sink, vector<int>& parent, residual_graph& residual ) {
-    int gargalo = bottleneck( source, sink, parent, residual );
 
-    int current_vertex = sink, fluxo = 0;
-    Node* current_edge;
-    while ( current_vertex != source ) {
-        current_edge = residual.adjacency_list[parent[current_vertex]]->getHead();
-        while ( current_edge->getKey() != current_vertex ) {
-            current_edge = current_edge->getNext();
-        }
-        if ( current_edge->isOriginal() ) {
-            current_edge = adjacency_list[parent[current_vertex]]->getHead();
-            while ( current_edge->getKey() != current_vertex ) {
-                current_edge = current_edge->getNext();
-            }
-            current_edge->setFlux( current_edge->getFlux() + gargalo );
+std::vector<std::pair<int, int>> Graph::augment(int source, int sink, vector<int>& parent, residual_graph& residual) {
+    int gargalo = bottleneck(source, sink, parent, residual);
+
+    int current_vertex = sink;
+    std::vector<std::pair<int, int>> affected_edges; // Para armazenar as arestas afetadas
+
+    while (current_vertex != source) {
+        int parent_vertex = parent[current_vertex];
+        auto it = residual.dictionary[parent_vertex]->find(current_vertex);
+        if (it->second.original) {
+            auto it2 = dictionary[parent_vertex]->find(current_vertex);
+            it2->second.flux += gargalo;
         }
         else {
-            current_edge = adjacency_list[current_vertex]->getHead();
-            while ( current_edge->getKey() != parent[current_vertex] ) {
-                current_edge = current_edge->getNext();
-            }
-            current_edge->setCapacity( current_edge->getFlux() - gargalo );
+            auto it2 = dictionary[current_vertex]->find(parent_vertex);
+            it2->second.flux -= gargalo;
         }
-        current_vertex = parent[current_vertex];
+
+        affected_edges.push_back({parent_vertex, current_vertex}); // Armazena a aresta afetada
+        current_vertex = parent_vertex;
     }
 
-    current_edge = adjacency_list[source]->getHead();
-    while ( current_edge != nullptr && current_edge->getKey() != sink ) {
-        fluxo += current_edge->getFlux();
-        current_edge = current_edge->getNext();
-    }
-    return fluxo;
-
+    return affected_edges; // Retorna as arestas afetadas
 }
 
-int Graph::ford_fulkerson( int source, int sink ) {
+
+void Graph::printDictionary() {
+    for ( unsigned long i = 0; i < dictionary.size(); i++ ) {
+        cout << "Vertex " << i + 1 << ": ";
+        for ( auto it = dictionary[i]->begin(); it != dictionary[i]->end(); ++it ) {
+            cout << "(" << it->first + 1 << ", " << it->second.capacity << ", " << it->second.flux << ") ";
+        }
+        cout << endl;
+    }
+}
+
+void Graph::printResidual( residual_graph& residual ) {
+    for ( unsigned long i = 0; i < residual.dictionary.size(); i++ ) {
+        cout << "Vertex " << i + 1 << ": ";
+        for ( auto it = residual.dictionary[i]->begin(); it != residual.dictionary[i]->end(); ++it ) {
+            cout << "(" << it->first + 1 << ", " << it->second.capacity << ") ";
+        }
+        cout << endl;
+    }
+}
+
+
+
+int Graph::ford_fulkerson( int source, int sink, bool write ) {
+    source--;
+    sink--;
     residual_graph residual( num_vertices );
-    Node* current_edge, *current_edge_r;
     int fluxo = 0;
+
+    
     for ( int i = 0; i < num_vertices; i++ ) {
-        current_edge = adjacency_list[i]->getHead();
-        while ( current_edge != nullptr ) {
-            residual.adjacency_list[i]->insertNode( current_edge->getKey(), current_edge->getCapacity(), 0, true );
-            residual.adjacency_list[current_edge->getKey()]->insertNode( i, 0, 0, false );
-            current_edge = current_edge->getNext();
+        for (auto it = dictionary[i]->begin(); it != dictionary[i]->end(); ++it) {
+            residual.dictionary[i]->insert( {it->first, {it->second.vertex, it->second.capacity, true}} );
+            residual.dictionary[it->first]->insert( {i, {i, 0, false}} );
         }
     }
 
-    while ( true ) {
-        vector<int>parents = getPath( source, sink, residual );
-        if ( parents[sink] == -1 )
-            break;
-        fluxo = augment( source, sink, parents, residual );
-        
+    /*printDictionary();
+    cout << endl;
+    printResidual( residual );
+    cout << "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-" << endl;*/
+    int delta = 0;
+    for ( auto it = dictionary[source]->begin(); it != dictionary[source]->end(); ++it ) {
+        delta += it->second.capacity;
+    }
+    delta = pow(2, floor(log2( delta )));
+    
+    while ( delta >= 1 ) {
+        while ( true ) {
+            vector<int>parents = getPathWithDelta( source, sink, residual, delta );
+            if ( parents[sink] == -1 )
+                break;
+            auto affected_edges = augment( source, sink, parents, residual );
+            
+            for (auto& edge : affected_edges) {
+                int u = edge.first, v = edge.second;
+                if (residual.dictionary[u]->find(v)->second.original) {
+                    auto it2 = dictionary[u]->find(v);
+                    residual.dictionary[u]->find(v)->second.capacity = it2->second.capacity - it2->second.flux;
+                } else {
+                    auto it2 = dictionary[v]->find(u);
+                    residual.dictionary[u]->find(v)->second.capacity = it2->second.flux;
+                }
+            }
+            /*printDictionary();
+            cout << endl;
+            printResidual( residual );
+            cout << "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-" << endl;*/
 
-        for ( int current_vertex = 0; current_vertex < num_vertices; current_vertex++ ) {
-            current_edge_r = residual.adjacency_list[current_vertex]->getHead();
-            while ( current_edge_r != nullptr ) {
-                if ( current_edge_r->isOriginal() ) {
-                    current_edge = adjacency_list[current_vertex]->getHead();
-                    while ( current_edge->getKey() != current_edge_r->getKey() ) {
-                        current_edge = current_edge->getNext();
-                    }
-                    current_edge_r->setCapacity( current_edge->getCapacity() - current_edge->getFlux() );
-                    current_edge_r = current_edge_r->getNext();
-                }
-                else {
-                    
-                    current_edge = adjacency_list[current_edge_r->getKey()]->getHead();
-                    while ( current_edge->getKey() != current_vertex ) {
-                        current_edge = current_edge->getNext();
-                    }
-                    current_edge_r->setCapacity( current_edge->getFlux() );
-                    current_edge_r = current_edge_r->getNext();
-                }
+        }
+        delta /= 2;
+    }
+    for ( auto it = dictionary[source]->begin(); it != dictionary[source]->end(); ++it ) {
+        fluxo += it->second.flux;
+    }
+    if ( write ) {
+        ofstream outFile( "fluxo_maximo.txt" );
+        if ( !outFile.is_open() )
+            exit( FILE_COULD_NOT_OPEN );
+        
+        outFile << "V1 V2 Fluxo" << endl;
+        for ( int i = 0; i < num_vertices; i++ ) {
+            for ( auto it = dictionary[i]->begin(); it != dictionary[i]->end(); ++it ) {
+                outFile << i + 1 << " " << it->first + 1 << " " << it->second.flux << endl;
             }
         }
 
+
+        outFile.close();
     }
-    cout << endl;
     return fluxo;
 }
 

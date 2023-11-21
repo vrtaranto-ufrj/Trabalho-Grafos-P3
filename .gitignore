@@ -10,3 +10,6 @@ graph.o
 list.o
 main.o
 node.o
+gmon.out
+analysis.txt
+fluxo_maximo.txt

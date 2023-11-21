@@ -12,6 +12,8 @@
 #include <ctime>
 #include <utility>
 #include <sstream>
+#include <unordered_map>
+#include <cmath>
 
 
 
@@ -24,14 +26,28 @@
 
 using namespace std;
 
+
+struct Edge {
+    int vertex;
+    int capacity;
+    int flux;
+};
+
+struct Edge_residual {
+    int vertex;
+    int capacity;
+    bool original;
+};
+
 struct residual_graph {
-    residual_graph( int _num_vertices ) : adjacency_list( _num_vertices ){
+    residual_graph( int _num_vertices ) : dictionary( _num_vertices ){
         for ( int i = 0; i < _num_vertices; i++ ) {
-            adjacency_list[i] = new List();
+            dictionary[i] = new unordered_map<int, Edge_residual>;
         }
     };
-    vector<List*> adjacency_list;
+    vector<unordered_map<int, Edge_residual>*> dictionary;
 };
+
 
 class Graph {
     public:
@@ -41,18 +57,21 @@ class Graph {
         void loadMatrix( string file );
         void loadList( string file );
         void loadListWeight( string file, bool directed = false );
+        void loadDictionary( string file );
         
         float dijkstra( int root, int destiny = -1 );
         float dijkstra_heap( int root, int destiny = -1 );
         void printCaminho( int root, int destiny, vector<int>& parent );
 
-        int ford_fulkerson( int source, int sink );
+        int ford_fulkerson( int source, int sink, bool write = false );
 
         int getMin( vector<bool>& visitados, vector<float> &distancias );
 
         vector<int>& getPath();
 
         void printList();
+        void printDictionary();
+        void printResidual( residual_graph& residual );
 
         void bfs( int root );
         void dfs( int root );
@@ -74,6 +93,8 @@ class Graph {
         vector<List*> adjacency_list;
         vector<vector<char>> adjacency_matrix;  // char para usar apenas 1 byte ao inves de 4 bytes (int)
         vector< vector< pair< float, int > > > adjacent_vector;
+        vector<unordered_map<int, Edge>*> dictionary;
+
         vector< int > path;
 
         void clearGraphRepresentation();
@@ -90,9 +111,9 @@ class Graph {
 
         void write_tree( vector<vector<int>>&tree_information, int root, string _fs );
 
-        int augment( int source, int sink, vector<int>& parent, residual_graph& residual );
+        std::vector<std::pair<int, int>> augment(int source, int sink, vector<int>& parent, residual_graph& residual);
         int bottleneck( int source, int sink, vector<int>& parent, residual_graph& residual );
-        vector<int> getPath( int source, int sink, residual_graph& residual );
+        vector<int> getPathWithDelta(int source, int sink, residual_graph& residual, int delta);
 };
 
 
