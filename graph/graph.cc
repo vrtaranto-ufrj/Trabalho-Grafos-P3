@@ -77,7 +77,7 @@ void Graph::loadList( string file ) {
     num_vertices = _size;
 }
 
-void Graph::loadListWeight( string file ) {
+void Graph::loadListWeight( string file, bool directed ) {
     // Método para carregar um grafo a partir de um arquivo de texto no formato lista de adjacência
     // Argumentos:
     //     file: string com o nome do arquivo a ser carregado
@@ -143,7 +143,8 @@ void Graph::loadListWeight( string file ) {
             }
         }
         adjacency_list[edge[0]]->insertNode(edge[1], peso);
-        adjacency_list[edge[1]]->insertNode(edge[0], peso);
+        if (!directed)
+            adjacency_list[edge[1]]->insertNode(edge[0], peso);
     }
 
     inputFile.close();

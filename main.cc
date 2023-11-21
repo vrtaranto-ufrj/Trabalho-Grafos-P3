@@ -18,12 +18,12 @@ int main( int argc, char *argv[] ) {
     float distancia;
     Graph* grafo = new Graph();
 
-    string arquivo = "grafo_W_", extensao = ".txt";
+    string arquivo = "grafo_rf_", extensao = ".txt";
 
 
     for ( int i = 1; i <= 5; i++ ) {
         cout << "Carregando grafo : " << i << endl;
-        grafo->loadListWeight( arquivo + to_string( i ) + extensao );
+        grafo->loadListWeight( arquivo + to_string( i ) + extensao, true );
 
         for ( int j = 20; j <= 60; j += 10 ) {
             cout << "10 -> " << j << endl;

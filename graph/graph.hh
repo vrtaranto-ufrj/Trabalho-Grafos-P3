@@ -31,7 +31,7 @@ class Graph {
 
         void loadMatrix( string file );
         void loadList( string file );
-        void loadListWeight( string file );
+        void loadListWeight( string file, bool directed = false );
         
         float dijkstra( int root, int destiny = -1 );
         float dijkstra_heap( int root, int destiny = -1 );
