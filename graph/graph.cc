@@ -152,6 +152,112 @@ void Graph::loadListWeight( string file, bool directed ) {
     num_vertices = _size;
 }
 
+int Graph::ford_fulkerson( int source, int sink ) {
+    residual_graph residual( num_vertices );
+    Node* current_edge;
+    for ( int i = 0; i < num_vertices; i++ ) {
+        current_edge = adjacency_list[i]->getHead();
+        while ( current_edge != nullptr ) {
+            residual.adjacency_list[i]->insertNode( current_edge->getKey(), current_edge->getCapacity() );
+            residual.adjacency_list[current_edge->getKey()]->insertNode( i, 0 );
+            current_edge = current_edge->getNext();
+        }
+    }
+
+    for (int i = 0; i < num_vertices; i++) {
+        Node* current_edge = residual.adjacency_list[i]->getHead();
+        cout << "Vertex " << i + 1 << ": ";
+        while (current_edge != nullptr) {
+            cout << "(" << current_edge->getKey() + 1 << ", " << current_edge->getCapacity() << ") ";
+            current_edge = current_edge->getNext();
+        }
+        cout << endl;
+    }
+    cout << endl;
+
+    for (int i = 0; i < num_vertices; i++) {
+        Node* current_edge = adjacency_list[i]->getHead();
+        cout << "Vertex " << i + 1 << ": ";
+        while (current_edge != nullptr) {
+            cout << "(" << current_edge->getKey() + 1 << ", " << current_edge->getCapacity() << ") ";
+            current_edge = current_edge->getNext();
+        }
+        cout << endl;
+    }
+
+    
+
+    int fluxo = 0;
+    int current_vertex, neighbor, min;
+    vector<int> parent( num_vertices, -1 );
+    vector<bool> visited( num_vertices, false );
+    queue<int> known;
+    Node* current_edge_residual;
+    vector<int> caminho;
+    while ( true ) {
+        known.push( source );
+        visited[source] = true;
+        while ( !known.empty() ) {
+            current_vertex = known.front();
+            known.pop();
+            if ( current_vertex == sink ) {
+                caminho.clear();
+                current_vertex = sink;
+                while ( current_vertex != source ) {
+                    caminho.push_back( current_vertex );
+                    current_vertex = parent[current_vertex];
+                }
+                caminho.push_back( current_vertex );
+                min = 1e9;
+                for ( int i = caminho.size() - 1; i > 0; i-- ) {
+                    current_edge_residual = residual.adjacency_list[caminho[i]]->getHead();
+                    while ( current_edge_residual->getKey() != caminho[i - 1] ) {
+                        current_edge_residual = current_edge_residual->getNext();
+                    }
+                    if ( current_edge_residual->getCapacity() < min )
+                        min = current_edge_residual->getCapacity();
+                }
+                for ( int i = caminho.size() - 1; i > 0; i-- ) {
+                    current_edge_residual = residual.adjacency_list[caminho[i]]->getHead();
+                    while ( current_edge_residual->getKey() != caminho[i - 1] ) {
+                        current_edge_residual = current_edge_residual->getNext();
+                    }
+                    current_edge_residual->setCapacity( current_edge_residual->getCapacity() - min );
+                    current_edge_residual = residual.adjacency_list[caminho[i - 1]]->getHead();
+                    while ( current_edge_residual->getKey() != caminho[i] ) {
+                        current_edge_residual = current_edge_residual->getNext();
+                    }
+                    current_edge_residual->setCapacity( current_edge_residual->getCapacity() + min );
+                }
+                fluxo += min;
+                for ( int i = 0; i < num_vertices; i++ ) {
+                    visited[i] = false;
+                    parent[i] = -1;
+                }
+                while ( !known.empty() )
+                    known.pop();
+                known.push( source );
+                visited[source] = true;
+            }
+            current_edge_residual = residual.adjacency_list[current_vertex]->getHead();
+            while ( current_edge_residual != nullptr ) {
+                neighbor = current_edge_residual->getKey();
+                if ( !visited[neighbor] && current_edge_residual->getCapacity() > 0 ) {
+                    known.push( neighbor );
+                    visited[neighbor] = true;
+                    parent[neighbor] = current_vertex;
+                }
+                current_edge_residual = current_edge_residual->getNext();
+            }
+        }
+        if ( !visited[sink] )
+            break;
+        
+    }
+    return fluxo;
+}
+
+
 float Graph::dijkstra( int root, int destiny ) {
     root--;
     destiny--;
@@ -179,7 +285,7 @@ float Graph::dijkstra( int root, int destiny ) {
         current_edge = adjacency_list[current_vertex]->getHead();
         while ( current_edge != nullptr ) {
             neighbor = current_edge->getKey();
-            weight = current_edge->getWeight();
+            weight = current_edge->getCapacity();
             if ( distance[neighbor] > distance[current_vertex] + weight ) {
                 distance[neighbor] = distance[current_vertex] + weight;
                 parent[neighbor] = current_vertex;
@@ -242,7 +348,7 @@ float Graph::dijkstra_heap( int root, int destiny ) {
         current_edge = adjacency_list[current_vertex]->getHead();
         while ( current_edge != nullptr ) {
             neighbor = current_edge->getKey();
-            weight = current_edge->getWeight();
+            weight = current_edge->getCapacity();
             if ( distance[neighbor] > distance[current_vertex] + weight ) {
                 distance[neighbor] = distance[current_vertex] + weight;
                 current_pair.first = distance[neighbor];

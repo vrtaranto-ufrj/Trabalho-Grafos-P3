@@ -3,19 +3,22 @@
 
 class Node {
     public:
-        Node( int _key, float _weight = 0 );
+        Node( int _key, int _capacity = 0, int _flux = 0 );
 
         // Setters
         void setNext( Node* _next );
 
         // Getters
         int getKey();
-        float getWeight();
+        int getCapacity();
+        void setCapacity( int _capacity );
+        int getFlux();
         Node* getNext();
 
     private:
         int key;
-        float weight;
+        int capacity;
+        int flux;
         Node* next;
 };
 

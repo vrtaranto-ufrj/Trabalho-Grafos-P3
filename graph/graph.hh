@@ -37,6 +37,8 @@ class Graph {
         float dijkstra_heap( int root, int destiny = -1 );
         void printCaminho( int root, int destiny, vector<int>& parent );
 
+        int ford_fulkerson( int source, int sink );
+
         int getMin( vector<bool>& visitados, vector<float> &distancias );
 
         vector<int>& getPath();
@@ -78,6 +80,15 @@ class Graph {
         int bfs_list_parallel( int root );
 
         void write_tree( vector<vector<int>>&tree_information, int root, string _fs );
+};
+
+struct residual_graph {
+    residual_graph( int _num_vertices ) : adjacency_list( _num_vertices ){
+        for ( int i = 0; i < _num_vertices; i++ ) {
+            adjacency_list[i] = new List();
+        }
+    };
+    vector<List*> adjacency_list;
 };
 
 #endif

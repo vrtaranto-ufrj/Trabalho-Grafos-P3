@@ -1,20 +1,37 @@
 #include "node.hh"
 
-Node::Node( int _key, float _weight ) {
+Node::Node( int _key, int _capacity, int _flux ) {
     // Inicializa o nó com a chave passada como argumento
     // Argumentos:
     //     _key: chave do nó a ser inicializado
 
-    weight = _weight;
+    capacity = _capacity;
     key = _key;
+    flux = _flux;
 }
 
-float Node::getWeight() {
-    // Método para retornar o peso da aresta
+int Node::getCapacity() {
+    // Método para retornar o capacidade da aresta
     // Retorno:
-    //     weight: peso da aresta
+    //     capacity: capacidade da aresta
 
-    return weight;
+    return capacity;
+}
+
+void Node::setCapacity( int _capacity ) {
+    // Método para setar a capacidade da aresta
+    // Argumentos:
+    //     _capacity: capacidade da aresta
+
+    capacity = _capacity;
+}
+
+int Node::getFlux() {
+    // Método para retornar o fluxo da aresta
+    // Retorno:
+    //     flux: fluxo da aresta
+
+    return flux;
 }
 
 void Node::setNext( Node* _next ){

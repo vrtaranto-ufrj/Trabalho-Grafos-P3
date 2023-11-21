@@ -10,7 +10,7 @@ class List {
         List();
         ~List();
 
-        void insertNode( int key, float weight = 0 );
+        void insertNode( int key, int weight = 0, int flux = 0 );
 
         // Getters
         Node* getHead();
