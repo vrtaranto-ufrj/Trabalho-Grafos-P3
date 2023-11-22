@@ -276,11 +276,11 @@ vector<int> Graph::getPathWithDelta(int source, int sink, residual_graph& residu
 }
 
 
-std::vector<std::pair<int, int>> Graph::augment(int source, int sink, vector<int>& parent, residual_graph& residual) {
+vector<pair<int, int>> Graph::augment(int source, int sink, vector<int>& parent, residual_graph& residual) {
     int gargalo = bottleneck(source, sink, parent, residual);
 
     int current_vertex = sink;
-    std::vector<std::pair<int, int>> affected_edges; // Para armazenar as arestas afetadas
+    vector<pair<int, int>> affected_edges; // Para armazenar as arestas afetadas
 
     while (current_vertex != source) {
         int parent_vertex = parent[current_vertex];

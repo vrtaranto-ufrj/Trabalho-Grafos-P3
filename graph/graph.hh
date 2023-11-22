@@ -111,7 +111,7 @@ class Graph {
 
         void write_tree( vector<vector<int>>&tree_information, int root, string _fs );
 
-        std::vector<std::pair<int, int>> augment(int source, int sink, vector<int>& parent, residual_graph& residual);
+        vector<pair<int, int>> augment(int source, int sink, vector<int>& parent, residual_graph& residual);
         int bottleneck( int source, int sink, vector<int>& parent, residual_graph& residual );
         vector<int> getPathWithDelta(int source, int sink, residual_graph& residual, int delta);
 };
