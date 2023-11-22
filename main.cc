@@ -21,7 +21,7 @@ int main( int argc, char *argv[] ) {
     string arquivo = "grafo_rf_", extensao = ".txt";
 
     delete grafo;
-    for ( int i = 1; i < 6; i++ ) {
+    for ( int i = 1; i <= 6; i++ ) {
         grafo = new Graph();
         cout << "Carregando grafo : " << i << endl;
         grafo->loadDictionary( arquivo + to_string( i ) + extensao );

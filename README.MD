@@ -39,10 +39,14 @@ Todos os métodos acima são compatíveis com grafos não direcionados.
 
 ## Grafos Com Peso
 
-- `void loadMatrixWeighted(string file)`: Carrega um grafo a partir de um arquivo utilizando matriz de adjacência com pesos.
 - `void loadListWeighted(string file)`: Carrega um grafo a partir de um arquivo utilizando lista de adjacência com pesos.
 - `void dijkstra(int root, int destiny)`: Realiza o algoritmo de Dijkstra a partir de um vértice raiz.
 - `void dijkstra_heap(int root, int destiny)`: Realiza o algoritmo de Dijkstra a partir de um vértice raiz.
 ---
+
+## Grafos Direcionados para fluxo máximo
+
+- `void loadDictionary(string file)`: Carrega um grafo a partir de um arquivo utilizando dicionário de dados.
+- `int ford_fulkerson(int source, int sink, bool write)`: Realiza o algoritmo de Ford-Fulkerson a partir de um vértice raiz até um vértice destino. O parâmetro `write` indica se o fluxo do grafo deve ser escrito em um arquivo.
 
 **Nota**: Certifique-se de que os arquivos de entrada estejam no formato correto e que as dependências estejam corretamente configuradas em seu ambiente de desenvolvimento.
