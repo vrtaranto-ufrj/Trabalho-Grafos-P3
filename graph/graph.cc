@@ -10,12 +10,7 @@ Graph::Graph() : printPath(true) {
 
 Graph::~Graph() {
     // Destrutor padrão
-    unsigned long i, _size;
-    _size = adjacency_list.size();
-    if ( _size > 0 )
-        for ( i = 0; i < _size; i++ )
-            delete adjacency_list[i];
-
+    clearGraphRepresentation();
 }
 
 void Graph::printList() {
@@ -599,6 +594,12 @@ void Graph::clearGraphRepresentation() {
         delete ptr;
     }
     adjacency_list.clear();
+
+    // Limpar e liberar a memória dos dicionários de adjacência existentes
+    for (auto ptr : dictionary) {
+        delete ptr;
+    }
+    dictionary.clear();
 
     // Resetar outras variáveis associadas, se necessário
     loaded = false;

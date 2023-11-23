@@ -45,6 +45,11 @@ struct residual_graph {
             dictionary[i] = new unordered_map<int, Edge_residual>;
         }
     };
+    ~residual_graph() {
+        for ( int i = 0; i < dictionary.size(); i++ ) {
+            delete dictionary[i];
+        }
+    }
     vector<unordered_map<int, Edge_residual>*> dictionary;
 };
 
